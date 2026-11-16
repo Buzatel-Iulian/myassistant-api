@@ -1,0 +1,5 @@
+# Test-only settings, added on top of src/main/resources/application.yml (Spring Boot also reads classpath:config/).
+# This signing secret is public and used only by the tests: never use it anywhere else.
+myassistant:
+  jwt:
+    secret: test-only-jwt-secret-not-for-any-real-use-0123456789
