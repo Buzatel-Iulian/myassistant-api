@@ -25,7 +25,7 @@ Every row is checked by a test. `TemplateControllerTest` (`@WebMvcTest`, the ser
 
 | Case | Expected | Test |
 | --- | --- | --- |
-| List my templates | 200, only my templates, sorted by name | `listReturnsMyTemplates` (controller), `listReturnsOnlyMyTemplatesSortedByName` (service) |
+| List my templates | 200, only my templates, sorted by name ignoring letter case (`alpha`, `Beta`, `zeta`) | `listReturnsMyTemplates` (controller), `listReturnsOnlyMyTemplatesSortedByName`, `listSortIgnoresLetterCase` (service) |
 | Get one of my templates | 200, the template with its `version` and variables | `getReturnsTemplate` (controller), `getReturnsMyTemplate` (service) |
 | Get an unknown id | 404 ProblemDetail "No template with id …" | `unknownTemplateIsNotFound` (controller + service) |
 | User B gets, updates or deletes user A's template | 404, the same answer as an unknown id (never 403); A's template is unchanged | `otherUsersTemplateIsNotFound` (service) |
@@ -59,5 +59,4 @@ The "delete in use" check asks a `TemplateUsage` port (an interface in the `temp
 ## Not yet decided
 
 - Two templates of the same user may have the same name.
-- _(Phase 5)_ The sort now ignores letter case (`alpha`, `Beta`, `zeta`): `listSortIgnoresLetterCase` in `TemplateServiceTest`.
 - `label` and `defaultValue` of a variable are optional (≤ 80 and ≤ 1000 characters); the web client shows the name when there is no label.
