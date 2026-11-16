@@ -1,9 +1,15 @@
 spring:
   application:
     name: myassistant-api
+  mongodb:
+    database: myassistant
   mvc:
     problemdetails:
       enabled: true
+  data:
+    mongodb:
+      # Creates the indexes declared on the documents (@Indexed) at startup, e.g. the unique user email.
+      auto-index-creation: true
 
 server:
   port: 8080

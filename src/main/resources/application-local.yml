@@ -1,0 +1,6 @@
+# The local profile: the API runs on this machine (make api-dev), MongoDB in Docker (make db).
+#   ./gradlew bootRun --args='--spring.profiles.active=local'
+spring:
+  mongodb:
+    host: localhost
+    port: 27017

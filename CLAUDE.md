@@ -22,7 +22,8 @@ This project is built **step by step, in phases**. Read the rules below before p
 - The behaviour of a feature is written down first as a **cases table** (`docs/<feature>-cases.md`), then as **tests written by hand** (`src/test/**`), committed before the implementation.
 - The coding agent writes the code in `src/main/**` that makes those tests pass. **It does not edit tests** (`.claude/settings.json` denies `Edit(src/test/**)`).
 - **Write the least code that makes the tests pass.** No extra endpoints, no extra classes.
-- When done, run `./gradlew build` and report the result.
+- When done, run `./gradlew build` and report the result. The build needs Docker: persistence tests start MongoDB in Testcontainers.
+- Test kinds: `@WebMvcTest` for controllers (service mocked); `@MongoPersistenceTest` (in `src/test/java/com/myassistant`) for repositories and services against a real MongoDB (`TestcontainersConfiguration`, entity validation included); `ArchitectureTest` (ArchUnit) for the dependency rules below.
 
 ## 3. Code rules
 
@@ -30,9 +31,11 @@ This project is built **step by step, in phases**. Read the rules below before p
 - **Controllers only call their own service.** Services return DTOs built by the feature's mapper; **entities never leave the service.**
 - `configuration` may call `TemplateService`; **`template` never depends on `configuration`.** `ConfigurationService` reads templates through `TemplateService`, never `TemplateRepository`. ArchUnit enforces these rules.
 - **Entities import nothing from Spring Web.** Validation uses Jakarta Bean Validation annotations (`@NotBlank`, `@Size`, `@Pattern`, ...) on DTOs (`@Valid` → 400) and on entities (validated again before every save), not hand-written `if ... throw` checks.
-- **Business errors are exceptions extending `NotFoundException` (404) or `ConflictException` (409).** `GlobalExceptionHandler` turns them into a `ProblemDetail` (`application/problem+json`). **No `try/catch` in controllers.**
+- **Business errors are exceptions extending `NotFoundException` (404) or `ConflictException` (409).** `GlobalExceptionHandler` turns them into a `ProblemDetail` (`application/problem+json`); a `ConflictException`'s `properties()` are added to it. **No `try/catch` in controllers.**
+- Error shapes the web client relies on: invalid `@Valid` body or invalid entity before save → 400 with `fieldErrors` (`{ "<field>": "<message>" }`); stale `@Version` → 409 *"This item was changed in another tab. Reload it and try again."*; duplicate unique key → 409 (the duplicated value is never echoed).
 - **Constructor injection via Lombok `@RequiredArgsConstructor`. No field injection.**
 - **Every query is scoped by the owner id.** An item that exists but belongs to someone else is answered with **404, never 403**, so the API does not reveal that it exists.
+- Profiles: `application.yml` (shared), `application-local.yml` (`make api-dev`, MongoDB on `localhost`), `application-docker.yml` (compose, host from `SPRING_MONGODB_HOST`).
 - Use DTO records for requests and responses. Concurrent edits are handled with `@Version` (stale update → 409).
 - Document endpoints for Swagger (`@ApiResponse` for 400/401/404/409 with `application/problem+json`).
 

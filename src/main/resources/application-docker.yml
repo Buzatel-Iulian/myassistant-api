@@ -1,0 +1,6 @@
+# The docker profile: the API runs in the compose project, next to the mongodb service.
+# compose.yml sets SPRING_PROFILES_ACTIVE=docker and SPRING_MONGODB_HOST=mongodb.
+spring:
+  mongodb:
+    host: ${SPRING_MONGODB_HOST:mongodb}
+    port: 27017
