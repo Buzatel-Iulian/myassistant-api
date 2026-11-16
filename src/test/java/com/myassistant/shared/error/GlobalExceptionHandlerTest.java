@@ -68,6 +68,17 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void badRequestExceptionIs400WithItsProperties() throws Exception {
+        mockMvc.perform(get("/probe/bad-request"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value("The probe text uses unknown names: a, b"))
+                .andExpect(jsonPath("$.unknown[0]").value("a"))
+                .andExpect(jsonPath("$.unknown[1]").value("b"));
+    }
+
+    @Test
     void staleVersionIs409WithReloadMessage() throws Exception {
         mockMvc.perform(get("/probe/stale"))
                 .andExpect(status().isConflict())
@@ -178,6 +189,12 @@ class GlobalExceptionHandlerTest {
         }
     }
 
+    static class ProbeInvalidException extends BadRequestException {
+        ProbeInvalidException(List<String> unknown) {
+            super("The probe text uses unknown names: " + String.join(", ", unknown), Map.of("unknown", unknown));
+        }
+    }
+
     @RestController
     @RequestMapping("/probe")
     static class ProbeController {
@@ -196,6 +213,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/conflict")
         void conflict() {
             throw new ProbeInUseException(List.of("First", "Second"));
+        }
+
+        @GetMapping("/bad-request")
+        void badRequest() {
+            throw new ProbeInvalidException(List.of("a", "b"));
         }
 
         @GetMapping("/stale")
