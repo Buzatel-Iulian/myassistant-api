@@ -1,0 +1,78 @@
+### Start the API first: make up (Docker) or make db + make api-dev.
+### Run the requests top to bottom: login keeps the token, create keeps the template id.
+### Register ana@example.com first with http/auth.http (once).
+
+@host = http://localhost:8080
+
+### Log in: the token is kept for the next requests
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "ana@example.com", "password": "secret-pass"}
+
+> {% client.global.set("token", response.body.token); %}
+
+### Create a template: 201 with a Location header and version 0. The id is kept.
+POST {{host}}/api/templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Language tutor",
+  "description": "Corrects and explains mistakes",
+  "content": "You are a patient {{language}} tutor. The student's level is {{level}}. Answer in at most {{maxSentences}} sentences.",
+  "variables": [
+    {"name": "language", "label": "Language", "defaultValue": "English"},
+    {"name": "level", "label": "Student level", "defaultValue": "beginner"},
+    {"name": "maxSentences", "label": "Max sentences", "defaultValue": "4"}
+  ]
+}
+
+> {% client.global.set("templateId", response.body.id); %}
+
+### My templates, sorted by name
+GET {{host}}/api/templates
+Authorization: Bearer {{token}}
+
+### The template just created
+GET {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}
+
+### A placeholder that is not declared: 400, unknownPlaceholders = ["tone"]
+POST {{host}}/api/templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name": "Broken", "content": "Answer in a {{tone}} tone, in {{language}}.", "variables": [{"name": "language"}]}
+
+### Invalid fields: 400 with fieldErrors (name, variables[0].name)
+POST {{host}}/api/templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name": "", "content": "Hello", "variables": [{"name": "1st"}]}
+
+### Update with the version that was read (0): 200, version 1. PUT sends every field.
+PUT {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version": 0, "name": "Language tutor", "description": "Short answers", "content": "You are a {{language}} tutor. Be brief.", "variables": [{"name": "language", "label": "Language", "defaultValue": "English"}]}
+
+### The same update again, with the old version 0: 409 "This item was changed in another tab. ..."
+PUT {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version": 0, "name": "Language tutor", "content": "You are a {{language}} tutor.", "variables": [{"name": "language"}]}
+
+### Without a token: 401 application/problem+json
+GET {{host}}/api/templates
+
+### Delete: 204 (409 with the configuration names if an assistant still uses it, from Phase 5)
+DELETE {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}
+
+### Gone: 404
+GET {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}

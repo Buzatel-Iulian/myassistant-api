@@ -60,6 +60,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(NOT_FOUND, exception.getMessage());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ProblemDetail handleBadRequest(BadRequestException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(BAD_REQUEST, exception.getMessage());
+        exception.properties().forEach(problem::setProperty);
+        return problem;
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ProblemDetail handleConflict(ConflictException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(CONFLICT, exception.getMessage());
