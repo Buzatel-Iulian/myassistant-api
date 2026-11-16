@@ -5,6 +5,7 @@ import com.myassistant.auth.dto.RegisterRequest;
 import com.myassistant.auth.dto.TokenResponse;
 import com.myassistant.auth.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // Two registrations of the same email at the same moment both pass this check; the unique index then refuses the
     // second one (DuplicateKeyException, also a 409).
@@ -22,8 +24,10 @@ public class AuthService {
         if (userRepository.existsByEmail(userMapper.normalizeEmail(request.email()))) {
             throw new EmailAlreadyUsedException();
         }
-        User user = userMapper.toEntity(request, passwordEncoder.encode(request.password()));
-        return userMapper.toResponse(userRepository.save(user));
+        User user = userRepository.save(userMapper.toEntity(request, passwordEncoder.encode(request.password())));
+        // The listeners (the starter kit) run now, in this thread; auth does not need to know what they create.
+        eventPublisher.publishEvent(new UserRegistered(user.getId()));
+        return userMapper.toResponse(user);
     }
 
     public TokenResponse login(LoginRequest request) {

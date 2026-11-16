@@ -69,7 +69,7 @@ Content-Type: application/json
 ### Without a token: 401 application/problem+json
 GET {{host}}/api/templates
 
-### Delete: 204 (409 with the configuration names if an assistant still uses it, from Phase 5)
+### Delete: 204 (409 with the configuration names if an assistant still uses it: see configurations.http)
 DELETE {{host}}/api/templates/{{templateId}}
 Authorization: Bearer {{token}}
 

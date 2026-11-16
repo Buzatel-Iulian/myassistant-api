@@ -7,9 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,14 +32,23 @@ public class TemplateService {
     // configuration exists yet, so no template is in use.
     private final ObjectProvider<TemplateUsage> templateUsages;
 
+    // Sorted by name ignoring letter case, here rather than in MongoDB: a case-insensitive collation would stop the
+    // ownerId index from serving the query, and one user's list is small.
     public List<TemplateResponse> findAll(String ownerId) {
-        return templateRepository.findByOwnerIdOrderByNameAsc(ownerId).stream()
+        return templateRepository.findByOwnerId(ownerId).stream()
+                .sorted(Comparator.comparing(PromptTemplate::getName,
+                        String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder())))
                 .map(templateMapper::toResponse)
                 .toList();
     }
 
     public TemplateResponse findById(String ownerId, String id) {
         return templateMapper.toResponse(getTemplate(ownerId, id));
+    }
+
+    /** Like {@link #findById}, but empty instead of a 404: for a reader that tolerates a template deleted meanwhile. */
+    public Optional<TemplateResponse> find(String ownerId, String id) {
+        return templateRepository.findByIdAndOwnerId(id, ownerId).map(templateMapper::toResponse);
     }
 
     public TemplateResponse create(String ownerId, CreateTemplateRequest request) {

@@ -21,6 +21,60 @@ myassistant:
     secret: ${MYASSISTANT_JWT_SECRET:}
     # How long a login token stays valid. There is no refresh token: after this, the user logs in again.
     ttl: 8h
+  # Created for every new user at registration (configuration.StarterKit), checked at startup (StarterKitProperties).
+  # Model ids are WebLLM prebuilt ids (@mlc-ai/web-llm 0.2.88, prebuiltAppConfig); both are small enough for a laptop.
+  starter-kit:
+    templates:
+      - key: general
+        template:
+          name: General assistant
+          description: A friendly all-round assistant
+          content: "You are a helpful, friendly assistant. Answer in {{language}}. Keep your answers {{style}}."
+          variables:
+            - name: language
+              label: Answer language
+              default-value: English
+            - name: style
+              label: Answer style
+              default-value: clear and concise
+      - key: code
+        template:
+          name: Code helper
+          description: Explains, writes and reviews code
+          content: "You are an experienced {{language}} developer. Explain briefly, then show complete, working code in Markdown code blocks. Point out bugs, edge cases and security risks."
+          variables:
+            - name: language
+              label: Programming language
+              default-value: TypeScript
+    configurations:
+      - template-key: general
+        configuration:
+          name: General assistant
+          description: Everyday questions, with a small, fast model
+          # About 1 GB of GPU memory (low_resource_required in WebLLM).
+          model-id: Qwen2.5-0.5B-Instruct-q4f16_1-MLC
+          favorite: true
+          settings:
+            temperature: 0.7
+            top-p: 0.95
+            max-tokens: 512
+            context-window-size: 4096
+            frequency-penalty: 0.0
+            presence-penalty: 0.0
+      - template-key: code
+        configuration:
+          name: Code helper
+          description: Programming help with a coding model
+          # About 1.6 GB of GPU memory.
+          model-id: Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC
+          favorite: false
+          settings:
+            temperature: 0.2
+            top-p: 0.9
+            max-tokens: 1024
+            context-window-size: 4096
+            frequency-penalty: 0.0
+            presence-penalty: 0.0
 
 management:
   endpoints:

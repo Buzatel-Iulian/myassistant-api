@@ -1,0 +1,130 @@
+### Start the API first: make up (Docker) or make db + make api-dev.
+### Run the requests top to bottom: login keeps the token, the creates keep the ids.
+### Register ana@example.com first with http/auth.http (once): registration also creates the starter kit
+### (templates and assistants "General assistant" and "Code helper").
+
+@host = http://localhost:8080
+
+### Log in: the token is kept for the next requests
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "ana@example.com", "password": "secret-pass"}
+
+> {% client.global.set("token", response.body.token); %}
+
+### My assistants: favorites first, then by name; the starter kit is there after registration
+GET {{host}}/api/configurations
+Authorization: Bearer {{token}}
+
+### A template for the new assistant. The id is kept.
+POST {{host}}/api/templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Language tutor",
+  "content": "You are a patient {{language}} tutor. The student's level is {{level}}. Answer in at most {{maxSentences}} sentences.",
+  "variables": [
+    {"name": "language", "label": "Language", "defaultValue": "English"},
+    {"name": "level", "label": "Student level", "defaultValue": "beginner"},
+    {"name": "maxSentences", "label": "Max sentences", "defaultValue": "4"}
+  ]
+}
+
+> {% client.global.set("templateId", response.body.id); %}
+
+### Create an assistant on that template: 201 with a Location header, version 0. The id is kept.
+### "level" and "maxSentences" are left out: resolvedVariableValues fills them with the template's defaults.
+POST {{host}}/api/configurations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "English tutor",
+  "description": "Daily English practice",
+  "modelId": "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+  "settings": {"temperature": 0.7, "topP": 0.95, "maxTokens": 512, "contextWindowSize": 4096, "frequencyPenalty": 0.0, "presencePenalty": 0.0},
+  "templateId": "{{templateId}}",
+  "variableValues": {"language": "English"},
+  "favorite": true
+}
+
+> {% client.global.set("configurationId", response.body.id); %}
+
+### The assistant with its template embedded and resolvedVariableValues: all the web client needs to start a chat
+GET {{host}}/api/configurations/{{configurationId}}
+Authorization: Bearer {{token}}
+
+### A variable the template does not declare: 400, unknownVariables = ["tone"]
+POST {{host}}/api/configurations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name": "Broken", "modelId": "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", "settings": {"temperature": 0.7, "topP": 0.95, "maxTokens": 512, "contextWindowSize": 4096, "frequencyPenalty": 0, "presencePenalty": 0}, "templateId": "{{templateId}}", "variableValues": {"tone": "warm"}}
+
+### A template that is not mine (or does not exist): 404
+POST {{host}}/api/configurations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name": "Broken", "modelId": "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", "settings": {"temperature": 0.7, "topP": 0.95, "maxTokens": 512, "contextWindowSize": 4096, "frequencyPenalty": 0, "presencePenalty": 0}, "templateId": "no-such-template"}
+
+### Invalid model id and settings: 400 with fieldErrors (modelId, settings.temperature, settings.maxTokens, ...)
+POST {{host}}/api/configurations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name": "Broken", "modelId": "gpt-4o", "settings": {"temperature": 3, "topP": 1.5, "maxTokens": 0, "contextWindowSize": 100, "frequencyPenalty": -3, "presencePenalty": 3}}
+
+### Update with the version that was read (0): 200, version 1. PUT sends every field.
+PUT {{host}}/api/configurations/{{configurationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "version": 0,
+  "name": "English tutor",
+  "description": "Advanced practice",
+  "modelId": "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+  "settings": {"temperature": 0.5, "topP": 0.9, "maxTokens": 768, "contextWindowSize": 4096, "frequencyPenalty": 0.0, "presencePenalty": 0.0},
+  "templateId": "{{templateId}}",
+  "variableValues": {"language": "English", "level": "advanced"},
+  "favorite": true
+}
+
+### The same update again, with the old version 0: 409 "This item was changed in another tab. ..."
+PUT {{host}}/api/configurations/{{configurationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"version": 0, "name": "English tutor", "modelId": "Llama-3.2-1B-Instruct-q4f16_1-MLC", "settings": {"temperature": 0.5, "topP": 0.9, "maxTokens": 768, "contextWindowSize": 4096, "frequencyPenalty": 0, "presencePenalty": 0}, "templateId": "{{templateId}}"}
+
+### Duplicate: 201, "English tutor (copy)", not a favorite. The id is kept.
+POST {{host}}/api/configurations/{{configurationId}}/duplicate
+Authorization: Bearer {{token}}
+
+> {% client.global.set("copyId", response.body.id); %}
+
+### Delete the template while assistants use it: 409, configurations = ["English tutor", "English tutor (copy)"]
+DELETE {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}
+
+### Without a token: 401 application/problem+json
+GET {{host}}/api/configurations
+
+### Delete both assistants: 204
+DELETE {{host}}/api/configurations/{{copyId}}
+Authorization: Bearer {{token}}
+
+###
+DELETE {{host}}/api/configurations/{{configurationId}}
+Authorization: Bearer {{token}}
+
+### Gone: 404
+GET {{host}}/api/configurations/{{configurationId}}
+Authorization: Bearer {{token}}
+
+### Now the template is unused: 204
+DELETE {{host}}/api/templates/{{templateId}}
+Authorization: Bearer {{token}}
