@@ -59,5 +59,5 @@ The "delete in use" check asks a `TemplateUsage` port (an interface in the `temp
 ## Not yet decided
 
 - Two templates of the same user may have the same name.
-- The sort is MongoDB's default string order, so upper-case names come before lower-case ones (`Zeta` before `alpha`).
+- _(Phase 5)_ The sort now ignores letter case (`alpha`, `Beta`, `zeta`): `listSortIgnoresLetterCase` in `TemplateServiceTest`.
 - `label` and `defaultValue` of a variable are optional (≤ 80 and ≤ 1000 characters); the web client shows the name when there is no label.

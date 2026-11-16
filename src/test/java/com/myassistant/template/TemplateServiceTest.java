@@ -13,6 +13,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,10 +90,29 @@ class TemplateServiceTest {
     }
 
     @Test
+    void listSortIgnoresLetterCase() {
+        templateService.create(ANA, tutor("zeta"));
+        templateService.create(ANA, tutor("Beta"));
+        templateService.create(ANA, tutor("alpha"));
+
+        assertEquals(List.of("alpha", "Beta", "zeta"), names(templateService.findAll(ANA)));
+    }
+
+    @Test
     void getReturnsMyTemplate() {
         TemplateResponse created = templateService.create(ANA, tutor("Language tutor"));
 
         assertEquals("Language tutor", templateService.findById(ANA, created.id()).name());
+    }
+
+    // The lookup ConfigurationService uses to embed a template that may have been deleted in the meantime.
+    @Test
+    void findIsEmptyForUnknownOrOtherUsersTemplate() {
+        TemplateResponse anas = templateService.create(ANA, tutor("Language tutor"));
+
+        assertEquals(Optional.of(anas), templateService.find(ANA, anas.id()));
+        assertEquals(Optional.empty(), templateService.find(BOB, anas.id()));
+        assertEquals(Optional.empty(), templateService.find(ANA, "t9"));
     }
 
     @Test
