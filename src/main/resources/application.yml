@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: myassistant-api
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # health for Docker, info for us. Never everything: some endpoints show settings.
+        include: health, info
+  endpoint:
+    health:
+      # /actuator/health/liveness and /readiness, the two questions an orchestrator asks.
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

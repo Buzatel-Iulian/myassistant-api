@@ -1,0 +1,9 @@
+# Build output and caches from the host: the image builds from source.
+build/
+.gradle/
+.kotlin/
+.idea/
+.vscode/
+.git/
+.env
+.env.*
