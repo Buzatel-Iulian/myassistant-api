@@ -14,6 +14,14 @@ spring:
 server:
   port: 8080
 
+myassistant:
+  jwt:
+    # The HS256 signing key, at least 32 bytes. Set by the profile (or MYASSISTANT_JWT_SECRET); empty here, so a run
+    # without one fails at startup instead of signing tokens with a known key.
+    secret: ${MYASSISTANT_JWT_SECRET:}
+    # How long a login token stays valid. There is no refresh token: after this, the user logs in again.
+    ttl: 8h
+
 management:
   endpoints:
     web:

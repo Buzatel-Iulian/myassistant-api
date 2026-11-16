@@ -4,3 +4,9 @@ spring:
   mongodb:
     host: localhost
     port: 27017
+
+myassistant:
+  jwt:
+    # make api-dev exports MYASSISTANT_JWT_SECRET from the wrapper's .env. Without it, this public, development-only
+    # value is used, so a plain bootRun works too. It is never used in Docker (application-docker.yml).
+    secret: ${MYASSISTANT_JWT_SECRET:local-development-only-jwt-secret-never-use-elsewhere}

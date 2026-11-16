@@ -20,6 +20,8 @@ dependencies {
     implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.data.mongodb)
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.security.oauth2.resource.server)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
     compileOnly(libs.lombok)
@@ -27,6 +29,7 @@ dependencies {
 
     testImplementation(libs.spring.boot.starter.webmvc.test)
     testImplementation(libs.spring.boot.starter.data.mongodb.test)
+    testImplementation(libs.spring.boot.starter.security.oauth2.resource.server.test)
     testImplementation(libs.spring.boot.testcontainers)
     testImplementation(libs.testcontainers.mongodb)
     testImplementation(libs.archunit.junit5)

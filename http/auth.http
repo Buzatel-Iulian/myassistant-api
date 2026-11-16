@@ -1,0 +1,47 @@
+### Start the API first: make up (Docker) or make db + make api-dev.
+### Run the requests top to bottom: login keeps the token for the requests after it.
+
+@host = http://localhost:8080
+
+### Register: 201 with { id, email, displayName }, never the password. Run it again: 409 (the email is taken).
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{"email": "ana@example.com", "password": "secret-pass", "displayName": "Ana"}
+
+### Invalid registration: 400 with fieldErrors for email, password and displayName
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{"email": "not-an-email", "password": "short", "displayName": ""}
+
+### Log in: 200 with { token, expiresAt }. The email is not case-sensitive. The token is kept for the next requests.
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "Ana@Example.com", "password": "secret-pass"}
+
+> {% client.global.set("token", response.body.token); %}
+
+### The logged-in user: 200 with { id, email, displayName }
+GET {{host}}/api/users/me
+Authorization: Bearer {{token}}
+
+### Without a token: 401 application/problem+json
+GET {{host}}/api/users/me
+
+### With a broken token: 401 application/problem+json
+GET {{host}}/api/users/me
+Authorization: Bearer not-a-real-token
+
+### Wrong password: 401 "Invalid email or password."
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "ana@example.com", "password": "wrong-pass"}
+
+### Unknown email: 401, the same answer as a wrong password
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "nobody@example.com", "password": "secret-pass"}

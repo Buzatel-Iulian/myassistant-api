@@ -1,6 +1,11 @@
 # The docker profile: the API runs in the compose project, next to the mongodb service.
-# compose.yml sets SPRING_PROFILES_ACTIVE=docker and SPRING_MONGODB_HOST=mongodb.
+# compose.yml sets SPRING_PROFILES_ACTIVE=docker, SPRING_MONGODB_HOST=mongodb and MYASSISTANT_JWT_SECRET (from .env).
 spring:
   mongodb:
     host: ${SPRING_MONGODB_HOST:mongodb}
     port: 27017
+
+myassistant:
+  jwt:
+    # No default on purpose: without the variable the secret is empty and the API refuses to start.
+    secret: ${MYASSISTANT_JWT_SECRET:}
