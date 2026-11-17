@@ -6,4 +6,6 @@ The REST API of **MyAssistant**: Spring Boot 4 on Java 25 (Gradle), with MongoDB
 - Data model and endpoints: [`docs/architecture.md`](../docs/architecture.md) in the wrapper.
 - Conventions for humans and coding agents: [`AGENTS.md`](AGENTS.md) (`CLAUDE.md` is generated from it with `sh scripts/sync-agent-instructions.sh`).
 
+The two `../docs/...` links are relative to the layout `make bootstrap` creates (this repository cloned inside the wrapper `myassistant`). Viewed on its own, for example on a Git host, open the same paths in the `myassistant` wrapper repository.
+
 This repository is cloned next to the wrapper's `Makefile` by `make bootstrap`; run it with `make up` from the wrapper.

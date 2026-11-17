@@ -22,11 +22,20 @@ public record MyAssistantProperties(Jwt jwt) {
         // HS256 needs a key of at least 256 bits; a shorter one would make every token easy to forge.
         static final int MIN_SECRET_BYTES = 32;
 
+        // The value the wrapper's .env.example ships. It is long enough, but public in git: tokens signed with it could
+        // be forged by anyone who has read the repository (QA-3-1). `make bootstrap` writes a random one instead.
+        private static final String ENV_EXAMPLE_PLACEHOLDER = "change-me-to-a-long-random-string-of-32-chars-or-more";
+
         /**
-         * The signing key. Called while the security beans are created, so a missing or short secret stops the
-         * application at startup. The message names the setting, never its value.
+         * The signing key. Called while the security beans are created, so a missing, short or placeholder secret
+         * stops the application at startup. The message names the setting, never its value.
          */
         public SecretKey signingKey() {
+            if (secret != null && secret.strip().equals(ENV_EXAMPLE_PLACEHOLDER)) {
+                throw new IllegalStateException("myassistant.jwt.secret (environment variable MYASSISTANT_JWT_SECRET) "
+                        + "is still the placeholder from .env.example, which is public. Run 'make bootstrap' to write "
+                        + "a random one into .env, or generate one with: openssl rand -base64 48");
+            }
             byte[] bytes = secret == null ? new byte[0] : secret.getBytes(StandardCharsets.UTF_8);
             if (bytes.length < MIN_SECRET_BYTES) {
                 throw new IllegalStateException("myassistant.jwt.secret (environment variable MYASSISTANT_JWT_SECRET) "
