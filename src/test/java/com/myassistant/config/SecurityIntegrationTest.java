@@ -146,6 +146,26 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void healthListsItsComponentsWithoutDetails() throws Exception {
+        // QA-2-2: which check is down is visible at a glance; hosts and versions are not.
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.mongo.status").value("UP"))
+                .andExpect(jsonPath("$.components.mongo.details").doesNotExist());
+    }
+
+    @Test
+    void openApiAdvertisesJsonSuccessAnswers() throws Exception {
+        // QA-4-1 / QA-5-5: success answers are documented as application/json, not */*.
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/users/me'].get.responses['200'].content['application/json']").exists())
+                .andExpect(jsonPath("$.paths['/api/users/me'].get.responses['200'].content['*/*']").doesNotExist())
+                .andExpect(jsonPath("$.paths['/api/templates'].get.responses['200'].content['application/json']").exists())
+                .andExpect(jsonPath("$.paths['/api/configurations'].post.responses['201'].content['application/json']").exists());
+    }
+
     private static String token(JwtEncoder encoder, Instant issuedAt, Instant expiresAt) {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject("some-user-id")
